@@ -1,2 +1,3 @@
 # Copia este archivo a terraform.tfvars y pon una contraseña real
 db_password = "CambiaEstaClave_123"
+moodle_admin_password = "Moodle_Admin#2026"

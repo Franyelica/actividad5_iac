@@ -30,3 +30,7 @@ output "db_username" {
 output "redis_host" {
   value = module.data.redis_host
 }
+
+output "moodle_url" {
+  value = "http://${module.compute.alb_dns_name}"
+}

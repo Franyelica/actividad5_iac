@@ -48,3 +48,9 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+variable "moodle_admin_password" {
+  description = "Clave del admin de Moodle (mayuscula, minuscula, numero y simbolo). Va en terraform.tfvars"
+  type        = string
+  sensitive   = true
+}
