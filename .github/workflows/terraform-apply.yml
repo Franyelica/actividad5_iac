@@ -1,0 +1,62 @@
+name: terraform-apply
+
+# Al hacer merge a main: aplica los cambios en AWS.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**.tf"
+      - ".terraform.lock.hcl"
+  workflow_dispatch: {} # tambien se puede lanzar a mano desde la pestana Actions
+
+permissions:
+  id-token: write
+  contents: read
+
+# Nunca dos apply al mismo tiempo (el lock del estado tambien lo evita).
+concurrency:
+  group: terraform-apply
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  TF_IN_AUTOMATION: "true"
+  TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+  TF_VAR_moodle_admin_password: ${{ secrets.MOODLE_ADMIN_PASSWORD }}
+  TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: init
+        run: terraform init -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+
+      - name: validate
+        run: terraform validate
+
+      - name: plan
+        run: terraform plan -no-color -input=false -out=tfplan
+
+      - name: apply
+        run: terraform apply -no-color -input=false tfplan
+
+      - name: Salidas
+        run: |
+          {
+            echo '### Despliegue'
+            echo '```'
+            terraform output -no-color
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

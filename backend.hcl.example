@@ -1,0 +1,2 @@
+# Copia a backend.hcl (no se sube a git). El valor sale de: terraform -chdir=bootstrap output tf_state_bucket
+bucket = "a5iac-moodle-tfstate-<ID_DE_TU_CUENTA>"
