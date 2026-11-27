@@ -42,6 +42,7 @@ resource "aws_cloudwatch_metric_alarm" "no_healthy_hosts" {
 }
 
 # Errores 5xx sobre el total de peticiones, durante 5 minutos.
+# Incluye errores del contenedor (Target_5XX) y errores generados por el balanceador (ELB_5XX, e.g. 502/503/504 por sobrecarga).
 resource "aws_cloudwatch_metric_alarm" "http_5xx" {
   alarm_name          = "${var.project_name}-errores-5xx"
   alarm_description   = "Mas del ${var.http_5xx_percent_threshold}% de las peticiones responden 5xx durante 5 minutos"
@@ -52,17 +53,32 @@ resource "aws_cloudwatch_metric_alarm" "http_5xx" {
 
   metric_query {
     id          = "rate"
-    expression  = "IF(requests > 0, 100 * errors / requests, 0)"
+    expression  = "IF(requests > 0, 100 * (target_errors + elb_errors) / requests, 0)"
     label       = "% errores 5xx"
     return_data = true
   }
 
   metric_query {
-    id = "errors"
+    id = "target_errors"
 
     metric {
       namespace   = "AWS/ApplicationELB"
       metric_name = "HTTPCode_Target_5XX_Count"
+      period      = 60
+      stat        = "Sum"
+
+      dimensions = {
+        LoadBalancer = var.alb_arn_suffix
+      }
+    }
+  }
+
+  metric_query {
+    id = "elb_errors"
+
+    metric {
+      namespace   = "AWS/ApplicationELB"
+      metric_name = "HTTPCode_ELB_5XX_Count"
       period      = 60
       stat        = "Sum"
 
@@ -313,6 +329,7 @@ resource "aws_cloudwatch_dashboard" "this" {
           metrics = [
             concat(["AWS/ApplicationELB", "RequestCount"], local.alb_dim),
             concat(["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count"], local.alb_dim),
+            concat(["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count"], local.alb_dim),
             concat(["AWS/ApplicationELB", "HTTPCode_Target_2XX_Count"], local.alb_dim),
           ]
         }

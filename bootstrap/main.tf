@@ -101,7 +101,9 @@ resource "aws_iam_role" "plan" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:${local.repo}:pull_request"
+        }
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:${var.github_owner}*/${var.github_repo}*:pull_request"
         }
       }
     }]
@@ -126,7 +128,9 @@ resource "aws_iam_role" "apply" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:${local.repo}:ref:refs/heads/${var.apply_branch}"
+        }
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:${var.github_owner}*/${var.github_repo}*:ref:refs/heads/${var.apply_branch}"
         }
       }
     }]
