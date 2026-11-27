@@ -4,3 +4,6 @@
 crash.log
 terraform.tfvars
 *.tfplan
+backend.hcl
+.terraform/
+bootstrap/terraform.tfstate*

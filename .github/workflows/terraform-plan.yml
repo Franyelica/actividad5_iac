@@ -1,0 +1,59 @@
+name: terraform-plan
+
+# En cada pull request hacia main: valida y muestra que cambiaria en AWS.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**.tf"
+      - ".terraform.lock.hcl"
+      - ".github/workflows/terraform-*.yml"
+
+permissions:
+  id-token: write # necesario para OIDC
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  TF_IN_AUTOMATION: "true"
+  TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+  TF_VAR_moodle_admin_password: ${{ secrets.MOODLE_ADMIN_PASSWORD }}
+  TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: fmt
+        run: terraform fmt -check -recursive
+
+      - name: init
+        run: terraform init -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+
+      - name: validate
+        run: terraform validate
+
+      - name: plan
+        id: plan
+        run: terraform plan -no-color -input=false -out=tfplan
+
+      - name: Resumen del plan
+        if: always()
+        run: |
+          {
+            echo '### terraform plan'
+            echo '```'
+            terraform show -no-color tfplan 2>/dev/null | tail -n 200
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -54,3 +54,8 @@ variable "moodle_admin_password" {
   type        = string
   sensitive   = true
 }
+
+variable "alert_email" {
+  description = "Correo que recibe las alertas de CloudWatch (SNS)"
+  type        = string
+}

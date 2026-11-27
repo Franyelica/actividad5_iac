@@ -39,3 +39,19 @@ module "compute" {
 
   moodle_admin_password = var.moodle_admin_password
 }
+
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  project_name = var.project_name
+  aws_region   = var.aws_region
+  alert_email  = var.alert_email
+
+  alb_arn_suffix          = module.compute.alb_arn_suffix
+  target_group_arn_suffix = module.compute.target_group_arn_suffix
+  ecs_cluster_name        = module.compute.cluster_name
+  ecs_service_name        = module.compute.service_name
+  log_group_name          = module.compute.log_group_name
+  db_instance_id          = module.data.db_instance_id
+  cache_cluster_id        = module.data.cache_cluster_id
+}

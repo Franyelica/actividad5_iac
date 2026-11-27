@@ -1,3 +1,4 @@
-# Copia este archivo a terraform.tfvars y pon una contraseña real
-db_password = "CambiaEstaClave_123"
+# Copia este archivo a terraform.tfvars (no se sube a git) y pon claves reales
+db_password           = "CambiaEstaClave_123"
 moodle_admin_password = "Moodle_Admin#2026"
+alert_email           = "castaxyz@gmail.com"
