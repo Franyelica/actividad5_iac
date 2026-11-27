@@ -73,3 +73,5 @@ terraform plan
 - El rol de apply usa `AdministratorAccess`, y solo `main` puede asumirlo. En un entorno real se reemplaza por una política con los servicios exactos.
 - Las claves llegan a la task definition como variables de entorno (quedan en el estado). Mejora pendiente: AWS Secrets Manager.
 - No hay pipeline de aplicación: Moodle usa una imagen pública. Para uno propio haría falta un fork de Moodle con Dockerfile, un repositorio ECR y un workflow que construya y despliegue la imagen.
+- **Recursos huérfanos previos:** Si se reutiliza una cuenta de AWS donde existieron despliegues manuales anteriores, recursos que no se eliminan al destruir VPCs (como `aws_elasticache_subnet_group` con nombres fijos) pueden causar colisiones `CacheSubnetGroupAlreadyExists`. Deben limpiarse previamente con `aws elasticache delete-cache-subnet-group --cache-subnet-group-name <nombre>`.
+- **Identificadores OIDC con formato numérico:** GitHub Actions puede emitir tokens con el ID numérico del repo (`repo:OWNER@ID/REPO@ID:*`). La política de confianza del rol IAM debe usar `StringLike` con comodines para garantizar compatibilidad.
