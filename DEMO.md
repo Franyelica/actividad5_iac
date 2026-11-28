@@ -9,7 +9,7 @@ Este documento contiene los comandos exactos y el paso a paso para la demostraci
 Define la URL de Moodle (obtenida del output `moodle_url` de Terraform en el resumen del job de apply):
 
 ```bash
-export MOODLE_URL="http://<tu-alb-dns-name>"
+export MOODLE_URL="http://http://a5iac-moodle-alb-1029717847.us-east-1.elb.amazonaws.com"
 export AWS_REGION="us-east-1"
 ```
 
@@ -132,4 +132,12 @@ Para no generar costos en la cuenta personal una vez calificada la actividad:
 
 5. **Métrica 5xx completa (Target + ALB):**
    - Bajo cargas masivas o fallos del contenedor, el Application Load Balancer genera errores `502 Bad Gateway`, `503 Service Unavailable` o `504 Gateway Timeout` directamente en el balanceador (`HTTPCode_ELB_5XX_Count`), adicionales a los que pueda generar el propio Moodle (`HTTPCode_Target_5XX_Count`). La alarma de observabilidad y el dashboard suman ambas métricas para garantizar que ninguna falla pase desapercibida.
+
+6. **Entorno de Ejecución de Terraform (Nube vs Local):**
+   - El despliegue de la infraestructura productiva no se ejecuta en la máquina del desarrollador, sino en un runner efímero de **GitHub Actions**:
+     1. **Runner de GitHub Actions:** Se levantó automáticamente cuando se hizo el merge del PR a la rama `main`.
+     2. **Autenticación OIDC:** Usó el rol IAM `arn:aws:iam::193793987836:role/a5iac-moodle-gha-apply` (creado en el bootstrap) para conectarse de forma segura a la cuenta personal de AWS sin almacenar llaves de acceso estáticas.
+     3. **Estado Remoto:** Descargó y bloqueó con lockfile el archivo de estado directamente en el bucket S3 `a5iac-moodle-tfstate-193793987836`.
+     4. **Creación de recursos:** Fue el runner de GitHub el que llamó a las APIs de AWS para aprovisionar la VPC, el balanceador ALB, la base de datos RDS MySQL, el cluster de ECS y el monitoreo.
+   - En la máquina local únicamente se ejecutó el **bootstrap** una sola vez (para crear el bucket S3 y los roles IAM) y los comandos de Git / inspección de AWS CLI.
 
